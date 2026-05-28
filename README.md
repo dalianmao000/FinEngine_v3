@@ -14,6 +14,8 @@
 - **Position 2 - FinAgent-Ops**：AI 驾驭工程平台（LLMOps）
 - **Position 3 - Risk-Investigator**：风控调查工作流
 
+**架构说明**：三个项目分别对应独立的 git 分支（`feature/finagent-core`、`feature/finagent-ops`、`feature/risk-investigator`），在单一代码库中独立演进。这样设计是为了展示"同一技术栈下不同定位的系统如何互补"，同时保持各自的独立性和可测试性。项目间的公共模式（如工具注册装饰器、TypedDict 状态设计）遵循相同的架构原则，但**未做显式代码共享**——每个项目都是完整自洽的实现，便于独立演示和面试讲解。
+
 ---
 
 ## 项目价值
