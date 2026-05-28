@@ -1,6 +1,7 @@
 """Gather intel node for collecting initial evidence."""
 
 import asyncio
+from datetime import datetime
 from typing import Dict, Any
 
 from app.tools.registry import tool_registry
@@ -38,7 +39,7 @@ async def gather_intel_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "ip_profile": task_ip.result(),
         "blacklist_status": task_blacklist.result(),
         "trigger_event": trigger_event,
-        "collection_timestamp": asyncio.get_event_loop().time(),
+        "collection_timestamp": datetime.now().isoformat(),
     }
 
     return {

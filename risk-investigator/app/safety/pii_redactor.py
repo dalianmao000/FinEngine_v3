@@ -23,11 +23,36 @@ def _mask_phone(text: str, match: re.Match) -> str:
 def _mask_card(text: str, match: re.Match) -> str:
     """Mask card number showing first 4 and last 4 digits.
 
-    Note: For overlapping patterns like 6222021234567890123 which matches
-    as 62220212345678901 (17 digits), masking first 4 and last 4 gives
-    the actual matched digit count preserved in the middle.
+    The regex may match only part of the full card number (e.g., 17 digits
+    from a 19-digit number due to overlap with ID pattern). In such cases,
+    we search for the full card number in the text and mask all 16+ digits.
     """
     card = match.group()
+    # Check if there are more digits of this card number in the text
+    # after the matched portion (for overlapping cases like 6222021234567890123)
+    card_start = match.start()
+    card_end = match.end()
+
+    # Look ahead to find if there are more card digits immediately after
+    # the matched portion that belong to this card
+    remaining_text = text[card_end:]
+    full_card_digits = ""
+    if remaining_text and remaining_text[0].isdigit():
+        # Collect all consecutive digits after the match
+        for ch in remaining_text:
+            if ch.isdigit():
+                full_card_digits += ch
+            else:
+                break
+
+    if full_card_digits:
+        # Found additional digits - combine them with matched portion
+        # to get the full card number, keeping first 4 + last 4 of full card
+        full_card = card + full_card_digits
+        if len(full_card) >= 8:
+            return f"{full_card[:4]}****{full_card[-4:]}"
+
+    # Standard case: mask the matched portion
     if len(card) >= 8:
         return f"{card[:4]}****{card[-4:]}"
     return "[CARD_001]"

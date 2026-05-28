@@ -127,16 +127,24 @@ class HumanInLoopManager:
 human_in_loop_manager = HumanInLoopManager()
 
 
-async def require_human_approval(task_id: str, report: dict) -> bool:
+async def notify_pending_approval(task_id: str, report: dict) -> bool:
     """
-    Create a human approval task for a high-risk investigation.
+    Send a notification for human approval of a high-risk investigation.
+
+    This is a fire-and-forget notification function - it creates the approval
+    task but does not wait for the approval to complete. Callers should use
+    HumanInLoopManager methods to poll for approval status.
 
     Args:
         task_id: Unique identifier for the task
         report: The investigation report
 
     Returns:
-        True (always, caller should await approval separately)
+        True if notification was sent successfully
     """
     human_in_loop_manager.create_approval_task(task_id, report)
     return True
+
+
+# Backwards-compatible alias
+require_human_approval = notify_pending_approval
