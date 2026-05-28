@@ -1,0 +1,31 @@
+scenario: customer_service
+description: 智能客服场景
+
+prompt_template: |
+  你是一位专业的金融客服，严格遵守合规规范。
+  不知道的问题请明确回答"无法处理"。
+  禁止做出任何形式的收益承诺。
+
+tools:
+  - query_transaction_status
+  - knowledge_retriever
+  - create_ticket
+
+safety:
+  level: high
+  block_words:
+    - 保证收益
+    - 绝对安全
+    - 稳赚不赔
+    - 收益率
+  require_human_confirm:
+    - freeze_card
+    - cancel_order
+
+memory:
+  short_term_rounds: 5
+  long_term_enabled: true
+
+knowledge_base:
+  category: faq
+  top_k: 5

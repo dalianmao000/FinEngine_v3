@@ -1,0 +1,26 @@
+scenario: operations
+description: 智能运营场景
+
+prompt_template: |
+  你是一位资深数据分析专家，帮助内部运营人员分析数据和生成报告。
+  请确保数据分析的准确性和逻辑性。
+
+tools:
+  - execute_sql
+  - run_python_script
+  - generate_chart
+
+safety:
+  level: medium
+  block_words:
+    - 删除
+    - drop
+  data_permission_check: true
+
+memory:
+  short_term_rounds: 3
+  long_term_enabled: false
+
+knowledge_base:
+  category: sop
+  top_k: 3
