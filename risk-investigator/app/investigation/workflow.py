@@ -42,7 +42,7 @@ async def human_approval_node(state: RiskState) -> dict:
     return {"status": "PENDING_APPROVAL"}
 
 
-async def end_node(state: RiskState) -> dict:
+async def finalize_node(state: RiskState) -> dict:
     """Node that marks task as COMPLETED.
 
     Args:
@@ -73,18 +73,18 @@ async def end_node(state: RiskState) -> dict:
     }
 
 
-def route_by_risk_level(state: RiskState) -> Literal["human_approval", "end"]:
+def route_by_human_approval(state: RiskState) -> Literal["human_approval", "finalize"]:
     """Route based on whether human approval is needed.
 
     Args:
         state: The current risk investigation state
 
     Returns:
-        "human_approval" if approval is needed, "end" otherwise
+        "human_approval" if approval is needed, "finalize" otherwise
     """
     if state.get("human_approval_needed"):
         return "human_approval"
-    return "end"
+    return "finalize"
 
 
 async def complete_investigation_with_approval(
@@ -132,7 +132,7 @@ def build_investigation_graph():
     workflow.add_node("risk_reasoner", risk_reasoner_node)
     workflow.add_node("report_generator", report_generator_node)
     workflow.add_node("human_approval", human_approval_node)
-    workflow.add_node("end_node", end_node)
+    workflow.add_node("finalize", finalize_node)
 
     # Set entry point
     workflow.set_entry_point("gather_intel")
@@ -142,17 +142,17 @@ def build_investigation_graph():
     workflow.add_edge("graph_explorer", "risk_reasoner")
     workflow.add_edge("risk_reasoner", "report_generator")
 
-    # Conditional edge from report_generator based on risk level
+    # Conditional edge from report_generator based on human approval needed
     workflow.add_conditional_edges(
         "report_generator",
-        route_by_risk_level,
+        route_by_human_approval,
         {
             "human_approval": "human_approval",
-            "end": "end_node",
+            "finalize": "finalize",
         },
     )
 
-    # Edge from human_approval to end_node
-    workflow.add_edge("human_approval", "end_node")
+    # Edge from human_approval to finalize
+    workflow.add_edge("human_approval", "finalize")
 
     return workflow.compile()

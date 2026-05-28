@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, patch
 
 from app.investigation.workflow import (
     build_investigation_graph,
-    route_by_risk_level,
+    route_by_human_approval,
     human_approval_node,
-    end_node,
+    finalize_node,
     complete_investigation_with_approval,
 )
 
@@ -31,7 +31,7 @@ class TestBuildInvestigationGraph:
             "risk_reasoner",
             "report_generator",
             "human_approval",
-            "end_node",
+            "finalize",
         ]
         for node_name in expected_nodes:
             assert node_name in node_names
@@ -43,26 +43,26 @@ class TestBuildInvestigationGraph:
         assert "gather_intel" in graph.nodes
 
 
-class TestRouteByRiskLevel:
-    """Test cases for route_by_risk_level function."""
+class TestRouteByHumanApproval:
+    """Test cases for route_by_human_approval function."""
 
     def test_routes_to_human_approval_when_needed(self):
         """Test routing to human_approval when human_approval_needed is True."""
         state = {"human_approval_needed": True}
-        result = route_by_risk_level(state)
+        result = route_by_human_approval(state)
         assert result == "human_approval"
 
-    def test_routes_to_end_when_approval_not_needed(self):
-        """Test routing to end when human_approval_needed is False."""
+    def test_routes_to_finalize_when_approval_not_needed(self):
+        """Test routing to finalize when human_approval_needed is False."""
         state = {"human_approval_needed": False}
-        result = route_by_risk_level(state)
-        assert result == "end"
+        result = route_by_human_approval(state)
+        assert result == "finalize"
 
-    def test_routes_to_end_when_human_approval_needed_missing(self):
-        """Test routing to end when human_approval_needed is not in state."""
+    def test_routes_to_finalize_when_human_approval_needed_missing(self):
+        """Test routing to finalize when human_approval_needed is not in state."""
         state = {}
-        result = route_by_risk_level(state)
-        assert result == "end"
+        result = route_by_human_approval(state)
+        assert result == "finalize"
 
 
 class TestHumanApprovalNode:
@@ -106,8 +106,8 @@ class TestHumanApprovalNode:
             mock_update.assert_not_called()
 
 
-class TestEndNode:
-    """Test cases for end_node function."""
+class TestFinalizeNode:
+    """Test cases for finalize_node function."""
 
     @pytest.mark.asyncio
     async def test_updates_task_status_to_completed(self):
@@ -119,7 +119,7 @@ class TestEndNode:
         }
 
         with patch("app.investigation.workflow.update_investigation_task", new_callable=AsyncMock) as mock_update:
-            result = await end_node(state)
+            result = await finalize_node(state)
 
             assert result["status"] == "COMPLETED"
             assert "completed_at" in result
@@ -139,7 +139,7 @@ class TestEndNode:
         }
 
         with patch("app.investigation.workflow.update_investigation_task", new_callable=AsyncMock) as mock_update:
-            result = await end_node(state)
+            result = await finalize_node(state)
 
             assert result["status"] == "COMPLETED"
             mock_update.assert_not_called()
