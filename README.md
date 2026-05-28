@@ -209,6 +209,16 @@ params = {"user_id": user_id}
 | **Observability（FinOps）** | 🟡 中等<br>内存计数器，PostgreSQL 日志，无真实 OpenTelemetry 上报 | 🟢 极高<br>Kafka → ClickHouse 全量 Trace，Prometheus + Grafana Dashboard，5 年保留 | 金融审计是监管要求<br>**难点**：海量数据低成本存储、查询性能、与监管报告对接 |
 | **Execution（工具沙箱）** | 🔴 较低<br>Python subprocess 简单超时，无真实容器隔离 | 🟢 极高<br>gVisor/Kata Containers 进程级隔离，网络/文件系统权限最小化 | 恶意工具注入是生产级威胁<br>**难点**：冷启动延迟、资源配额动态调整 |
 
+### AI Harness 工程深度对比表
+
+| Harness 子域 | MVP 方案 (基础管控) | 实际生产级 Harness 工程 (深度驾驭) | 差异理由与生产级难点 |
+|:---|:---|:---|:---|
+| **1. Eval Harness<br>(评估与质量驾驭)** | 🟡 **脚本化与单一裁判**<br>写 Python 脚本读取测试集，用 LLM-as-a-Judge 打分，输出简单的准确率/幻觉率报告。 | 🟢 **标准化评测框架与防污染**<br>类似 `lm-evaluation-harness` 的企业级定制版。支持多维度指标（RAGAS/TruLens），**严格的测试集防污染隔离**，与 CI/CD 深度集成的质量门禁，支持小模型作为常态化 Judge 以降低成本。 | **理由**：大模型输出非确定，单次评测无统计学意义。<br>**难点**：构建金融专属 Golden Dataset（黄金测试集）；解决 LLM 裁判的"位置偏见"和"自我偏好"；高并发评测时的算力调度。 |
+| **2. Serving Harness<br>(推理与流量驾驭)** | 🟡 **API 代理与基础限流**<br>FastAPI 转发请求，基于 Redis 做简单的 QPS 限流和基于规则的模型路由。 | 🟢 **底层推理引擎封装与算力池化**<br>深度集成 `vLLM/TGI`，管控 KV Cache 命中率、Continuous Batching 策略。实现**基于请求复杂度（Token预测）的智能路由**，多级 Fallback（降级）策略，以及 GPU 显存的动态切分（MIG/vGPU）。 | **理由**：金融级高并发下，简单的 API 转发会导致严重的长尾延迟（P99 飙升）。<br>**难点**：大请求（长上下文）对显存的瞬间挤占导致 OOM；多模型混部时的资源隔离与抢占。 |
+| **3. Guardrail Harness<br>(安全与边界驾驭)** | 🟡 **规则拦截与简单分类**<br>正则表达式过滤敏感词，简单的 Prompt 注入检测，硬编码的合规词库。 | 🟢 **独立安全模型与动态策略引擎**<br>部署专门的 Guardrail 模型（如 `LlamaGuard` 或微调的 BERT），实现输入/输出**双向异步拦截**。策略引擎支持按业务线、用户角色动态下发安全规则，具备防越狱的自动化红蓝对抗演练机制。 | **理由**：正则无法理解语义级别的越狱攻击（如"角色扮演"、"Base64编码注入"）。<br>**难点**：安全模型自身的推理延迟不能拖累主业务；安全策略的误杀率（False Positive）控制。 |
+| **4. Execution Harness<br>(Agent执行与沙箱驾驭)** | 🟡 **直接调用与弱隔离**<br>Agent 直接通过 HTTP 调用外部 API 或执行简单的 Python 脚本，缺乏严格的资源限制。 | 🟢 **强隔离沙箱与权限收敛**<br>代码执行工具放入 `gVisor` 或 `Kata Containers` 强隔离沙箱；API 调用经过统一的 MCP (Model Context Protocol) 网关，实施**细粒度到数据行级的 RBAC/ABAC 权限校验**和严格的超时强杀机制。 | **理由**：Agent 具备自主决策能力，一旦产生幻觉调用错误工具或执行死循环，破坏力极大。<br>**难点**：沙箱启动的冷启动延迟优化；复杂工具链调用时的分布式事务一致性与回滚。 |
+| **5. Observability Harness<br>(可观测与成本驾驭)** | 🟡 **基础 Trace 与日志聚合**<br>OpenTelemetry 记录调用链路耗时，存入 PG 数据库，展示基础的 QPS 和错误率面板。 | 🟢 **Token 级归因与 AIOps 根因分析**<br>实现 **FinOps（云财务运营）**，将 Token 消耗精确归因到具体的 Prompt 版本、业务线甚至单个用户。引入 AIOps，对 Trace 数据进行异常检测，自动聚类 Badcase 并生成根因分析报告。 | **理由**：大模型的成本结构与传统微服务完全不同（按 Token 计费），且"系统没报错但回答是错的"这种隐性故障极多。<br>**难点**：海量 Trace 数据中语义级异常的自动发现；流式输出（Streaming）状态下的精准 Token 计量。 |
+
 ### Risk-Investigator 核心模块对比
 
 | 核心维度 | MVP 项目实现程度 | 金融生产级要求 | 差异理由与生产级难点 |
