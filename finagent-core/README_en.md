@@ -1,5 +1,9 @@
 # FinAgent-Core
 
+![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)
+![License](https://img.shields.io/badge/License-MIT-purple.svg)
+
 Financial AI Agent Core Engine
 
 ## Architecture

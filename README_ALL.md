@@ -1,4 +1,10 @@
-# AI-Engine v3
+# FinEngine v3
+
+![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)
+![LangGraph](https://img.shields.io/badge/LangGraph-0.1+-orange.svg)
+![Neo4j](https://img.shields.io/badge/Neo4j-5.x-yellowgreen.svg)
+![License](https://img.shields.io/badge/License-MIT-purple.svg)
 
 金融级 AI Agent 系统 - 面试级生产项目集
 
@@ -44,7 +50,7 @@ Risk-Investigator: 垂直工作流（四阶段调查流水线）
 ## 项目结构
 
 ```
-AI-Engine_v3/
+FinEngine_v3/
 ├── finagent-core/          # 通用智能体核心引擎
 │   ├── app/
 │   │   ├── agent/          # 编排器 + 状态机
@@ -361,8 +367,8 @@ params = {"user_id": user_id}
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-repo/AI-Engine_v3.git
-cd AI-Engine_v3
+git clone https://github.com/your-repo/FinEngine_v3.git
+cd FinEngine_v3
 
 # 验证 FinAgent-Core
 cd finagent-core

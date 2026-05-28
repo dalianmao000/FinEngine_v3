@@ -1,5 +1,10 @@
 # Risk-Investigator
 
+![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
+![LangGraph](https://img.shields.io/badge/LangGraph-0.1+-orange.svg)
+![Neo4j](https://img.shields.io/badge/Neo4j-5.x-yellowgreen.svg)
+![License](https://img.shields.io/badge/License-MIT-purple.svg)
+
 A financial-grade risk investigation and attribution system with multi-agent workflow, GraphRAG, and human-in-the-loop validation.
 
 ## Architecture
