@@ -8,11 +8,7 @@
 
 金融级 AI Agent 系统 - 面试级生产项目集
 
-> 本项目包含三个互补的 AI Agent 系统，展示从通用智能体平台到垂直场景解决方案再到基础设施管控平台的完整技术能力。
-
-- **Position 1 - FinAgent-Core**：通用智能体核心引擎
-- **Position 2 - FinAgent-Ops**：AI 驾驭工程平台（LLMOps）
-- **Position 3 - Risk-Investigator**：风控调查工作流
+> 本项目包含两个互补的 AI Agent 系统，展示从通用智能体平台到垂直场景解决方案的完整技术能力。
 
 ---
 
@@ -36,7 +32,6 @@
 ```
 FinAgent-Core: 通用平台（场景路由 + RAG + 工具编排）
 Risk-Investigator: 垂直工作流（四阶段调查流水线）
-FinAgent-Ops: 基础设施管控（路由 + 缓存 + 安全 + 评测 + 可观测）
 ```
 
 **2. 生产级安全设计**
@@ -56,7 +51,7 @@ FinAgent-Ops: 基础设施管控（路由 + 缓存 + 安全 + 评测 + 可观测
 
 ```
 FinEngine_v3/
-├── finagent-core/          # 通用智能体核心引擎 (Position 1)
+├── finagent-core/          # 通用智能体核心引擎
 │   ├── app/
 │   │   ├── agent/          # 编排器 + 状态机
 │   │   ├── rag/            # 知识库检索
@@ -65,7 +60,7 @@ FinEngine_v3/
 │   │   └── safety/         # PII 检测 + 内容过滤
 │   └── tests/              # 核心测试
 │
-├── risk-investigator/      # 风控调查工作流 (Position 3)
+├── risk-investigator/      # 风控调查工作流
 │   ├── app/
 │   │   ├── investigation/  # 四阶段调查节点
 │   │   ├── graph_rag/      # Cypher 查询生成
@@ -73,32 +68,21 @@ FinEngine_v3/
 │   │   └── audit/          # 审计日志
 │   └── tests/              # 95 测试
 │
-├── finagent-ops/           # AI 驾驭工程平台 (Position 2)
-│   ├── app/
-│   │   ├── harness/
-│   │   │   ├── serving/    # 模型路由 + 语义缓存 + 限流
-│   │   │   ├── security/    # Guardrail + 策略引擎 + ABAC
-│   │   │   ├── execution/   # 工具注册 + 沙箱隔离
-│   │   │   ├── eval/        # LLM-as-a-Judge + 批量评估
-│   │   │   └── observability/  # Trace + Metrics + FinOps
-│   │   └── api/            # FastAPI 网关
-│   └── tests/              # 集成测试
-│
 └── README.md               # 本文件
 ```
 
 ---
 
-## FinAgent-Core vs Risk-Investigator vs FinAgent-Ops
+## FinAgent-Core vs Risk-Investigator
 
-| 维度 | FinAgent-Core | Risk-Investigator | FinAgent-Ops |
-|------|---------------|-------------------|--------------|
-| **定位** | 通用 Agent 平台 | 风控垂直场景工作流 | AI 驾驭工程平台 |
-| **架构** | 单体多技能 Agent | Pipeline 式多 Agent 协作 | 5 大 Harness 子系统 |
-| **状态管理** | LangGraph 状态机 | TypedDict + 条件路由 | 无状态（管控层） |
-| **核心能力** | 意图识别 + RAG + 工具调用 | 调查流水线 + 图查询 | 路由/缓存/安全/评测/可观测 |
-| **安全特点** | PII 检测 + 内容过滤 | PII 脱敏 + 人工审批 | Guardrail + OPA 策略引擎 |
-| **适用场景** | 智能客服、金融顾问 | 风险调查、异常归因 | LLM/Agent 基础设施管控 |
+| 维度 | FinAgent-Core | Risk-Investigator |
+|------|---------------|-------------------|
+| **定位** | 通用 Agent 平台 | 风控垂直场景工作流 |
+| **架构** | 单体多技能 Agent | Pipeline 式多 Agent 协作 |
+| **状态管理** | LangGraph 状态机 | TypedDict + 条件路由 |
+| **核心能力** | 意图识别 + RAG + 工具调用 | 调查流水线 + 图查询 |
+| **安全特点** | PII 检测 + 内容过滤 | PII 脱敏 + 人工审批 |
+| **适用场景** | 智能客服、金融顾问 | 风险调查、异常归因 |
 
 **互补关系**: FinAgent-Core 是底座，Risk-Investigator 是基于底座构建的垂直解决方案。
 
@@ -199,16 +183,6 @@ params = {"user_id": user_id}
 | **可观测性** | 🟡 中等<br>本地 Phoenix + 控制台日志 | 🟢 极高<br>全链路 Trace，Kafka→ES，保留 5 年，对接监管 | 审计是金融命脉<br>**难点**：海量 Trace 存储与快速检索 |
 | **高可用部署** | 🟡 中等<br>Docker Compose 单机 | 🟢 极高<br>K8s 多活，异地灾备，自动故障恢复 | 单机无法满足金融 99.99% SLA<br>**难点**：流量切换、RTO/RPO 保障 |
 
-### FinAgent-Ops (AI Harness 工程) 核心模块对比
-
-| Harness 子域 | MVP 实现程度 | 实际生产级别 | 差异理由与金融级现实难点 |
-|:---|:---|:---|:---|
-| **1. Serving Harness<br>(算力底座与路由)** | 🟡 **单集群调度与开源推理**<br>基于 K8s + vLLM/TGI 的逻辑调度，实现基于复杂度的模型路由和单集群内的弹性伸缩。 | 🟢 **异构算力混部与跨机房多活**<br>Nvidia与**国产算力(昇腾/海光)统一池化**与算子优化；底层 RDMA 网络加速；**两地三中心单元化部署**，单机房断电秒级跨机房流量切换。 | **理由**：金融核心系统要求 RTO(恢复时间)<30s，且**信创（国产化替代）是硬性政治指标**。<br>**难点**：国产NPU的算子适配与显存管理极难；跨机房大模型状态同步与长连接（SSE）的无缝切换是世界级工程难题。 |
-| **2. Guardrail Harness<br>(安全与合规防线)** | 🟡 **开源组件拼装与逻辑防护**<br>Presidio 脱敏 + OPA 策略引擎 + LlamaGuard 拦截，实现逻辑上的双向防护与动态策略下发。 | 🟢 **国密改造与监管级防篡改**<br>全链路**国密(SM2/3/4)改造**；脱敏引擎需通过银联内部安全红蓝对抗认证；审计日志写入 **WORM(一次写入多次读取)存储或上链**，满足防篡改要求。 | **理由**：开源安全组件无法满足金融等保三级/四级要求。国家密码管理局规定金融核心系统必须使用国密。<br>**难点**：国密算法对推理延迟的损耗优化；应对国家级黑客针对大模型 Prompt 的 APT（高级持续性威胁）攻击。 |
-| **3. Execution Harness<br>(沙箱与工具执行)** | 🟡 **现代云原生沙箱与标准协议**<br>gVisor/Firecracker 强隔离沙箱，MCP 协议统一网关，基于属性的 ABAC 权限校验，超时强杀。 | 🟢 **金融级零信任与核心系统适配**<br>对接银联 **4A 统一认证**与动态授权；工具调用需适配**老旧核心系统(如AS400/大型机)** 的异步回调；具备严格的**分布式事务补偿(TCC/SAGA)** 机制。 | **理由**：银行内部存在大量几十年前的历史遗留系统，不支持现代 RESTful/gRPC。金融交易一旦失败，不能只靠"超时强杀"，必须有严密的资金冲正/回滚机制。<br>**难点**：大模型异步等待老旧系统回执时的状态机管理；跨异构系统的分布式事务一致性。 |
-| **4. Eval Harness<br>(质量门禁与演进)** | 🟡 **CI/CD 拦截与自动化打分**<br>GitLab CI 集成，LLM-as-a-Judge 自动化打分，黄金测试集防污染，不达标阻断 Merge。 | 🟢 **影子流量灰度与监管备案闭环**<br>新模型/Prompt上线必须经过真实流量的**影子测试(Shadow Testing)**；建立 RLHF（人类反馈强化学习）数据飞轮；对接**网信办/人行大模型备案系统**。 | **理由**：金融业务不能容忍"评测集得分高但线上翻车"。影子流量是验证真实效果的唯一标准。生成式AI在金融核心场景应用需满足严格的监管备案流程。<br>**难点**：影子流量的高并发回放与结果比对；从海量线上 Badcase 中自动清洗出高质量微调数据的工程链路。 |
-| **5. Observability Harness<br>(监控与 FinOps)** | 🟡 **独立Trace与成本归因**<br>OpenTelemetry 全链路 Trace，ClickHouse 成本归因，Badcase 向量聚类告警。 | 🟢 **AIOps 根因分析与全行级监控融合**<br>Trace 数据与全行统一监控平台打通，实现从 **GPU 底层温度/显存碎片 -> 到业务转化率**的端到端 AIOps 根因定位；每天百亿级日志的极低延迟 OLAP 检索。 | **理由**：近生产级是独立的监控孤岛。实际生产中，AI 平台的监控必须融入银行现有的庞大运维体系（如统一告警中心）。<br>**难点**：海量高维 Trace 数据的存储成本优化；大模型"隐性故障（如缓慢的幻觉漂移）"的自动化数学建模与预警。 |
-
 ### Risk-Investigator 核心模块对比
 
 | 核心维度 | MVP 项目实现程度 | 金融生产级要求 | 差异理由与生产级难点 |
@@ -219,28 +193,6 @@ params = {"user_id": user_id}
 | **安全、合规与权限** | 🔴 较低<br>简单正则替换脱敏，所有工具对 Agent 开放，无数据行级权限控制 | 🟢 极高<br>NLP 脱敏网关，RBAC+ABAC 数据权限，防 Prompt 注入专用安全模型，国密算法 | 金融监管红线<br>**难点**：动态脱敏性能损耗、复杂 ABAC 权限实时计算、防越狱攻击红蓝对抗 |
 | **审计与可观测性** | 🟡 中等<br>Arize Phoenix 本地看 Trace，日志在控制台或本地文件，无长期存储 | 🟢 极高<br>全链路 Trace 接入 SkyWalking，日志加密写入 Kafka→ES，保留 5 年以上，对接监管审计报告 | 审计是金融风控命脉<br>**难点**：海量 Trace 低成本存储与快速检索、幻觉自动化监控与拦截 |
 | **业务集成与工具调用** | 🟡 中等<br>FastAPI 编写 4 个返回固定 JSON 的假接口，同步调用，无熔断限流 | 🟢 极高<br>对接真实内部微服务（统一 API 网关），具备熔断、降级、限流，支持异步回调 | 个人无法连接真实银行内部系统<br>**难点**：老旧系统适配、跨部门 API 权限审批与网络打通 |
-
----
-
-### FinAgent-Core (大模型应用) Harness 差异对比表
-
-| Harness 子域 | MVP 实现程度 | 实际生产级别 | 差异理由与应用层现实难点 |
-|:---|:---|:---|:---|
-| **1. Serving Harness<br>(体验与容灾驾驭)** | 🟡 **API调用与基础重试**<br>调用岗位2提供的网关，处理简单的超时重试，实现基础的流式输出（SSE）。 | 🟢 **长连接治理与无缝降级**<br>处理弱网环境下的 SSE 断线重连与状态恢复；当主模型宕机触发 Fallback（降级）到备用小模型时，**保证多轮对话上下文的无缝衔接与 Persona（人设）不崩塌**。 | **理由**：C端用户对卡顿和"AI突然变笨/失忆"零容忍。<br>**难点**：大模型流式输出的半截断处理；多模型切换时的隐状态（KV Cache）对齐与上下文重写。 |
-| **2. Guardrail Harness<br>(业务逻辑驾驭)** | 🟡 **通用安全与合规拦截**<br>依赖底层网关拦截涉黄/涉政/通用 Prompt 注入，使用正则过滤明显的违规词。 | 🟢 **业务语义级护栏与动态约束**<br>防范**业务逻辑越权**（如：客服Agent被诱导答应"免除年费"）；基于用户画像动态调整护栏（如：对老年用户开启更严格的"防诈骗/防诱导"输出拦截）。 | **理由**：通用 Guardrail 不懂金融业务。大模型没违规，但"乱承诺"会导致银行资损。<br>**难点**：构建金融业务专属的语义判别模型；在极短延迟内完成复杂的业务规则校验。 |
-| **3. Execution Harness<br>(工具与协同驾驭)** | 🟡 **同步调用与简单状态机**<br>Agent 同步调用工具，使用 LangGraph 维护简单的线性或条件分支状态，处理基础的工具报错。 | 🟢 **工具幂等性、异步化与死锁预防**<br>所有写操作工具必须具备**幂等性**（防大模型重试导致重复扣款）；长耗时工具（如生成报表）转为异步回调；**多 Agent 协同中的死锁检测与强制打破机制**。 | **理由**：大模型有概率陷入"工具调用死循环"或"多Agent互相等待"。<br>**难点**：分布式 Agent 状态的一致性；大模型幻觉导致传错参数时的业务级回滚（冲正）。 |
-| **4. Eval Harness<br>(业务效果驾驭)** | 🟡 **离线准确率与 LLM 打分**<br>用测试集跑准确率，用 LLM-as-a-Judge 评估回答的流畅度和相关性。 | 🟢 **在线 A/B 测试与用户反馈飞轮**<br>建立**在线业务指标对齐**（如：客服Agent的"首问解决率"、推荐Agent的"点击转化率"）；自动收集用户"踩/赞"数据，清洗后自动回流至微调数据集（Data Flywheel）。 | **理由**：离线评测分数高，不代表线上业务效果好。<br>**难点**：如何科学地衡量大模型对业务指标的真实增量（Uplift）；从脏乱的线上日志中自动提取高质量 SFT 数据。 |
-
----
-
-### Risk-Investigator (风控应用) Harness 差异对比表
-
-| Harness 子域 | MVP 实现程度 | 实际生产级别 | 差异理由与风控层现实难点 |
-|:---|:---|:---|:---|
-| **1. Guardrail Harness<br>(防投毒与硬兜底)** | 🟡 **PII脱敏与输出合规校验**<br>输入脱敏卡号，输出校验是否包含违规词，依赖大模型自身的逻辑判断。 | 🟢 **防数据投毒与"规则引擎"一票否决**<br>防范黑产通过交易备注进行**数据投毒/注入**；**大模型判定必须与硬规则引擎交叉验证**（若大模型判低风险，但规则引擎判高风险，强制以规则引擎为准，大模型仅做解释）。 | **理由**：风控是生命线，绝不能把决策权完全交给概率性的大模型。<br>**难点**：大模型输出结果与传统规则引擎结果的冲突解决机制；对抗环境下恶意特征输入的清洗。 |
-| **2. Execution Harness<br>(权限与高危驾驭)** | 🟡 **沙箱执行与人工审批中断**<br>代码在 Docker 沙箱运行，高危操作（冻结）在 LangGraph 中暂停等待人工输入 `y/n`。 | 🟢 **数据行级权限(RLS)与 Maker-Checker 机制**<br>Agent 查询图谱/流水时，底层数据库强制执行**行级安全策略（Row-Level Security）**；高危操作必须走银行标准的 **Maker-Checker（经办-复核）双人授权流程**，而非简单的终端确认。 | **理由**：内部人员越权和操作风险是金融风控的大忌。<br>**难点**：将大模型的工具调用请求，动态翻译并下推为底层数据库的 RLS 过滤条件；对接银行老旧的 OA 审批流。 |
-| **3. Eval Harness<br>(证据链与召回驾驭)** | 🟡 **案例打分与逻辑连贯性评估**<br>用 LLM 评估生成的调查报告是否通顺、逻辑是否合理。 | 🟢 **基于真实案件的证据链完整性校验**<br>**禁用 LLM 评 LLM**（防幻觉叠加）。必须基于历史真实欺诈案件（Ground Truth），严格评估 Agent 是否找全了关键证据节点（Recall），以及推理链条是否具备**法律级别的因果关系**。 | **理由**：风控报告需要作为报警或诉讼证据，逻辑通顺但"证据缺失"是致命错误。<br>**难点**：构建包含复杂资金链路的图结构评测集；自动化校验"证据链闭环"的算法设计。 |
-| **4. Observability Harness<br>(监管级审计驾驭)** | 🟡 **全链路 Trace 与日志存储**<br>用 OpenTelemetry 记录调用链，存入 PostgreSQL/ES，支持按 TaskID 查询。 | 🟢 **防篡改存证与特征归因分析**<br>核心审计日志必须写入 **WORM（一次写入多次读取）存储或上链**，满足监管 5 年防篡改审查；Trace 不仅记耗时，还要记录大模型决策时的**特征重要性（Feature Attribution）**，以备监管问询。 | **理由**：满足《生成式人工智能服务管理暂行办法》及人行对金融AI的审计要求。<br>**难点**：海量防篡改存储的成本控制；从黑盒大模型中提取白盒特征归因的技术（如 SHAP 值与 CoT 的结合）。 |
 
 ---
 
@@ -396,88 +348,18 @@ params = {"user_id": user_id}
 
 ---
 
-### 岗位 2：AI 驾驭工程平台 / LLMOps 方向
-
-#### Q1：什么是 AI Harness Engineering？它解决什么问题？
-
-> **面试官**："你简历上写的'AI Harness Engineering'是什么意思？和普通的 API 网关有什么区别？"
-
-> **完美回答**：
-> "AI Harness Engineering 是我设计的一种企业级 LLM/Agent 基础设施管控模式。传统的 API 网关只做路由和限流，而 Harness 的核心是**全链路控制**：
-> 1. **Serving Harness（驾驭服务）**：按复杂度智能路由模型（简单 query 用 7B 模型省成本，复杂分析用 72B 保质量），叠加语义缓存减少重复调用。
-> 2. **Security Harness（驾驭安全）**：不是简单的内容过滤，而是 OPA 风格的策略引擎 + ABAC 权限模型，可以精细化控制'谁在哪个业务线用什么工具'。
-> 3. **Execution Harness（驾驭执行）**：工具注册与 RBAC 强制关联，沙箱隔离执行，防止恶意工具注入。
-> 4. **Eval Harness（驾驭评测）**：LLM-as-a-Judge 自动评分，CI/CD 集成，确保 Prompt 变更不降级质量。
-> 5. **Observability Harness（驾驭可观测）**：FinOps 成本追踪——按业务线、模型、Prompt 版本分别统计 token 消耗和费用。
->
-> 这解决的是企业 AI 落地的三个核心痛点：**成本失控、质量不一致、安全合规无保障**。"
-
-#### Q2：模型路由的复杂度判断是怎么做的
-
-> **面试官**："你怎么判断一个 query 该路由到 7B 模型还是 72B 模型？标准是什么？"
-
-> **完美回答**：
-> "我的复杂度判断基于**双指标加权**：Token 数量 + 关键词语义分析。
-> 1. **Token 数量**：用 tiktoken 精确计算，低于 50 token 判为 LOW，高于 200 token 判为 HIGH，中间为 MEDIUM。
-> 2. **关键词匹配**：包含'分析'、'比较'、'评估'等复杂意图词的 query 会提升一个级别。
->
-> 这样做的好处是**零额外延迟**——在模型调用前同步完成判断，不影响响应时效。实际测试中，简单查询（余额查询、还款咨询）路由到 7B 模型，成本降低 40%+，而复杂分析类 query 仍路由到 72B，质量不降。"
-
-#### Q3：语义缓存是怎么实现的？如何判断两个 query 是"语义相似"的？
-
-> **面试官**："你提到语义缓存，具体是怎么判断两个 query 是否可以复用缓存的？"
-
-> **完美回答**：
-> "MVP 阶段我用的是**简单 embedding 相似度**方案：
-> 1. 将 query 文本通过 embedding 模型转换为向量
-> 2. 用 Redis 存储向量，key 是业务线 + 模型名称
-> 3. 新请求来时，计算其 embedding 与缓存中所有向量的余弦相似度
-> 4. 相似度 > 0.85 则判定为命中，返回缓存结果
->
-> 生产级升级方向是引入 **ChromaDB** 做向量检索，支持更大规模的缓存池。关键指标是**缓存 hit rate**，我的目标是 > 30%，意味着相同/相似 query 每三次调用中有一次不掏 token 费用。"
-
-#### Q4：如何设计一个 OPA 风格的策略引擎？
-
-> **面试官**："你在简历上写了'OPA 风格'的策略引擎，能详细说说吗？"
-
-> **完美回答**：
-> "OPA（Open Policy Agent）的核心理念是**策略与代码分离**。我的实现：
-> 1. **策略存储**：PostgreSQL 中存 JSON 格式的 Rego-like 策略规则，包含 effect（allow/deny）和 condition（匹配条件）。
-> 2. **评估上下文**：PolicyContext 包含 user_id、business_line、tool_name、attributes，评估时作为入参传入引擎。
-> 3. **匹配逻辑**：引擎遍历所有 active 策略，按优先级找到第一个匹配的条件，返回 allow 或 deny 及原因。
-> 4. **非阻塞**：策略评估在 FastAPI 中间件层同步完成，不影响主请求路径延迟。
->
-> ABAC 部分是 Mock 实现，生产级需要对接 LDAP/AD 获取用户角色和组织架构信息。"
-
-#### Q5：FinOps 成本追踪是怎么实现的？
-
-> **面试官**："你说能按业务线追踪 AI 调用成本，具体是怎么做的？"
-
-> **完美回答**：
-> "成本追踪依赖于 **Observability Harness 的全链路埋点**：
-> 1. 每次 LLM 调用在 Gateway 层记录 input_tokens、output_tokens、model_name、business_line
-> 2. FinOpsTracker 维护一张费率表（如 qwen-72b = $0.002/1K tokens，qwen-7b = $0.0005/1K tokens）
-> 3. 每次调用后实时累加到对应 business_line 的成本中
-> 4. 提供 `/api/v1/costs` 接口返回按业务线聚合的成本报表
->
-> 这解决了企业 AI 成本分摊的难题——财务可以精确知道'客服业务线'和'风控业务线'各自消耗了多少 token，应该分配多少费用。配合缓存 hit rate 指标，可以评估缓存对成本的节省贡献。"
-
----
-
 ## 技术栈汇总
 
 | 组件 | 技术选型 | 用途 |
 |------|----------|------|
-| 后端框架 | FastAPI 0.110+ | 异步 API + 中间件 |
+| 后端框架 | FastAPI 0.110+ | 异步 API |
 | Agent 编排 | LangGraph 0.1+ | 状态机 + 条件路由 |
 | 图数据库 | Neo4j | 知识图谱查询 |
 | 向量数据库 | ChromaDB | RAG 检索 |
 | LLM | DashScope (Qwen) | 文本生成 |
 | ORM | SQLAlchemy 2.0 | 异步数据库 |
-| 缓存/限流 | Redis | 语义缓存 + 分布式限流 |
-| 可观测 | OpenTelemetry + Prometheus | 全链路追踪 + 指标采集 |
-| 评测 | tiktoken + LLM-as-Judge | Token 计数 + 自动评分 |
-| 测试 | pytest + pytest-asyncio | 异步测试 |
+| 测试 | pytest | 异步测试 |
+| 可观测 | OpenTelemetry + Phoenix | 全链路追踪 |
 
 ---
 
@@ -485,7 +367,7 @@ params = {"user_id": user_id}
 
 ```bash
 # 克隆项目
-git clone https://github.com/dalianmao000/FinEngine_v3.git
+git clone https://github.com/your-repo/FinEngine_v3.git
 cd FinEngine_v3
 
 # 验证 FinAgent-Core
@@ -495,13 +377,6 @@ pytest tests/ -v --tb=short
 
 # 验证 Risk-Investigator
 cd ../risk-investigator
-pip install -r requirements.txt
-cd docker && docker-compose up -d
-cd ..
-pytest tests/ -v --tb=short
-
-# 验证 FinAgent-Ops
-cd ../finagent-ops
 pip install -r requirements.txt
 cd docker && docker-compose up -d
 cd ..
