@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any
 
+from app.safety.pii_redactor import redact_pii
+
 
 async def report_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """Generate the final investigation report with evidence summary.
@@ -77,6 +79,9 @@ async def report_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Generate report ID
     report_id = f"RPT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
 
+    # Redact PII from graph_query_result before including in report
+    redacted_graph_summary = redact_pii(graph_query_result[:500]) if graph_query_result else ""
+
     # Enrich the final report
     enriched_report = {
         "report_id": report_id,
@@ -88,7 +93,7 @@ async def report_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "reasoning_summary": final_report.get("reasoning_summary", ""),
         "evidence_list": evidence_list,
         "evidence_count": len(evidence_list),
-        "graph_query_summary": graph_query_result[:500] if graph_query_result else "",
+        "graph_query_summary": redacted_graph_summary,
     }
 
     return {

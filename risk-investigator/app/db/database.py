@@ -18,10 +18,16 @@ engine: Optional[create_async_engine] = None
 async_session_maker: Optional[async_sessionmaker] = None
 
 
-async def init_db(database_url: str) -> None:
-    """Initialize the database engine and create all tables."""
+async def init_db(database_url: str = None) -> None:
+    """Initialize the database engine and create all tables.
+
+    Args:
+        database_url: Optional database URL. If not provided, uses settings.database_url
+    """
+    from app.config import settings
     global engine, async_session_maker
-    engine = create_async_engine(database_url, echo=False, future=True)
+    db_url = database_url or settings.database_url
+    engine = create_async_engine(db_url, echo=False, future=True)
     async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with engine.begin() as conn:
