@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
+from app.config import get_settings
 from app.api.routes import api_router
+
+settings = get_settings()
 
 app = FastAPI(
     title="FinAgent-Ops",
