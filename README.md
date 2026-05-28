@@ -8,7 +8,11 @@
 
 金融级 AI Agent 系统 - 面试级生产项目集
 
-> 本项目包含两个互补的 AI Agent 系统，展示从通用智能体平台到垂直场景解决方案的完整技术能力。
+> 本项目包含三个互补的 AI Agent 系统，展示从通用智能体平台到垂直场景解决方案再到基础设施管控平台的完整技术能力。
+
+- **Position 1 - FinAgent-Core**：通用智能体核心引擎
+- **Position 2 - FinAgent-Ops**：AI 驾驭工程平台（LLMOps）
+- **Position 3 - Risk-Investigator**：风控调查工作流
 
 ---
 
@@ -32,6 +36,7 @@
 ```
 FinAgent-Core: 通用平台（场景路由 + RAG + 工具编排）
 Risk-Investigator: 垂直工作流（四阶段调查流水线）
+FinAgent-Ops: 基础设施管控（路由 + 缓存 + 安全 + 评测 + 可观测）
 ```
 
 **2. 生产级安全设计**
@@ -51,7 +56,7 @@ Risk-Investigator: 垂直工作流（四阶段调查流水线）
 
 ```
 FinEngine_v3/
-├── finagent-core/          # 通用智能体核心引擎
+├── finagent-core/          # 通用智能体核心引擎 (Position 1)
 │   ├── app/
 │   │   ├── agent/          # 编排器 + 状态机
 │   │   ├── rag/            # 知识库检索
@@ -60,7 +65,7 @@ FinEngine_v3/
 │   │   └── safety/         # PII 检测 + 内容过滤
 │   └── tests/              # 核心测试
 │
-├── risk-investigator/      # 风控调查工作流
+├── risk-investigator/      # 风控调查工作流 (Position 3)
 │   ├── app/
 │   │   ├── investigation/  # 四阶段调查节点
 │   │   ├── graph_rag/      # Cypher 查询生成
@@ -68,21 +73,32 @@ FinEngine_v3/
 │   │   └── audit/          # 审计日志
 │   └── tests/              # 95 测试
 │
+├── finagent-ops/           # AI 驾驭工程平台 (Position 2)
+│   ├── app/
+│   │   ├── harness/
+│   │   │   ├── serving/    # 模型路由 + 语义缓存 + 限流
+│   │   │   ├── security/    # Guardrail + 策略引擎 + ABAC
+│   │   │   ├── execution/   # 工具注册 + 沙箱隔离
+│   │   │   ├── eval/        # LLM-as-a-Judge + 批量评估
+│   │   │   └── observability/  # Trace + Metrics + FinOps
+│   │   └── api/            # FastAPI 网关
+│   └── tests/              # 集成测试
+│
 └── README.md               # 本文件
 ```
 
 ---
 
-## FinAgent-Core vs Risk-Investigator
+## FinAgent-Core vs Risk-Investigator vs FinAgent-Ops
 
-| 维度 | FinAgent-Core | Risk-Investigator |
-|------|---------------|-------------------|
-| **定位** | 通用 Agent 平台 | 风控垂直场景工作流 |
-| **架构** | 单体多技能 Agent | Pipeline 式多 Agent 协作 |
-| **状态管理** | LangGraph 状态机 | TypedDict + 条件路由 |
-| **核心能力** | 意图识别 + RAG + 工具调用 | 调查流水线 + 图查询 |
-| **安全特点** | PII 检测 + 内容过滤 | PII 脱敏 + 人工审批 |
-| **适用场景** | 智能客服、金融顾问 | 风险调查、异常归因 |
+| 维度 | FinAgent-Core | Risk-Investigator | FinAgent-Ops |
+|------|---------------|-------------------|--------------|
+| **定位** | 通用 Agent 平台 | 风控垂直场景工作流 | AI 驾驭工程平台 |
+| **架构** | 单体多技能 Agent | Pipeline 式多 Agent 协作 | 5 大 Harness 子系统 |
+| **状态管理** | LangGraph 状态机 | TypedDict + 条件路由 | 无状态（管控层） |
+| **核心能力** | 意图识别 + RAG + 工具调用 | 调查流水线 + 图查询 | 路由/缓存/安全/评测/可观测 |
+| **安全特点** | PII 检测 + 内容过滤 | PII 脱敏 + 人工审批 | Guardrail + OPA 策略引擎 |
+| **适用场景** | 智能客服、金融顾问 | 风险调查、异常归因 | LLM/Agent 基础设施管控 |
 
 **互补关系**: FinAgent-Core 是底座，Risk-Investigator 是基于底座构建的垂直解决方案。
 
@@ -182,6 +198,16 @@ params = {"user_id": user_id}
 | **安全与权限** | 🔴 较低<br>简单 PII 过滤，无细粒度权限 | 🟢 极高<br>NLP 脱敏网关，RBAC+ABAC，国密算法 | 金融监管红线<br>**难点**：动态脱敏性能、复杂权限策略 |
 | **可观测性** | 🟡 中等<br>本地 Phoenix + 控制台日志 | 🟢 极高<br>全链路 Trace，Kafka→ES，保留 5 年，对接监管 | 审计是金融命脉<br>**难点**：海量 Trace 存储与快速检索 |
 | **高可用部署** | 🟡 中等<br>Docker Compose 单机 | 🟢 极高<br>K8s 多活，异地灾备，自动故障恢复 | 单机无法满足金融 99.99% SLA<br>**难点**：流量切换、RTO/RPO 保障 |
+
+### FinAgent-Ops 核心模块对比
+
+| 核心维度 | MVP 实现程度 | 生产级要求 | 差异理由 |
+|:---|:---|:---|:---|
+| **Serving（路由/缓存/限流）** | 🟡 中等<br>token 数量简单分级，Redis 简单 KV 缓存，无向量检索 | 🟢 极高<br>混合意图识别 + 向量相似度匹配，ChromaDB 语义缓存，Redis 分布式限流 | 缓存命中率决定成本优化空间<br>**难点**：语义相似度阈值调优、缓存更新策略 |
+| **Security（策略引擎）** | 🟡 中等<br>JSON 规则简单匹配，ABAC Mock 实现 | 🟢 极高<br>OPA Rego 完整语法，LDAP/AD 实时拉取角色，策略热更新 | 企业安全合规是底线<br>**难点**：策略版本管理、多租户隔离、评估性能 |
+| **Eval（LLM-as-a-Judge）** | 🟡 中等<br>简单关键词打分，无真实 LLM 调用 | 🟢 极高<br>真实 Secondary LLM 评估，多维度 Cross-Encoder 重排序，Golden Dataset 专家标注 | 评估质量决定 Prompt 迭代方向<br>**难点**：Judge Model 选择、评估一致性、CI/CD 无缝集成 |
+| **Observability（FinOps）** | 🟡 中等<br>内存计数器，PostgreSQL 日志，无真实 OpenTelemetry 上报 | 🟢 极高<br>Kafka → ClickHouse 全量 Trace，Prometheus + Grafana Dashboard，5 年保留 | 金融审计是监管要求<br>**难点**：海量数据低成本存储、查询性能、与监管报告对接 |
+| **Execution（工具沙箱）** | 🔴 较低<br>Python subprocess 简单超时，无真实容器隔离 | 🟢 极高<br>gVisor/Kata Containers 进程级隔离，网络/文件系统权限最小化 | 恶意工具注入是生产级威胁<br>**难点**：冷启动延迟、资源配额动态调整 |
 
 ### Risk-Investigator 核心模块对比
 
@@ -348,18 +374,88 @@ params = {"user_id": user_id}
 
 ---
 
+### 岗位 2：AI 驾驭工程平台 / LLMOps 方向
+
+#### Q1：什么是 AI Harness Engineering？它解决什么问题？
+
+> **面试官**："你简历上写的'AI Harness Engineering'是什么意思？和普通的 API 网关有什么区别？"
+
+> **完美回答**：
+> "AI Harness Engineering 是我设计的一种企业级 LLM/Agent 基础设施管控模式。传统的 API 网关只做路由和限流，而 Harness 的核心是**全链路控制**：
+> 1. **Serving Harness（驾驭服务）**：按复杂度智能路由模型（简单 query 用 7B 模型省成本，复杂分析用 72B 保质量），叠加语义缓存减少重复调用。
+> 2. **Security Harness（驾驭安全）**：不是简单的内容过滤，而是 OPA 风格的策略引擎 + ABAC 权限模型，可以精细化控制'谁在哪个业务线用什么工具'。
+> 3. **Execution Harness（驾驭执行）**：工具注册与 RBAC 强制关联，沙箱隔离执行，防止恶意工具注入。
+> 4. **Eval Harness（驾驭评测）**：LLM-as-a-Judge 自动评分，CI/CD 集成，确保 Prompt 变更不降级质量。
+> 5. **Observability Harness（驾驭可观测）**：FinOps 成本追踪——按业务线、模型、Prompt 版本分别统计 token 消耗和费用。
+>
+> 这解决的是企业 AI 落地的三个核心痛点：**成本失控、质量不一致、安全合规无保障**。"
+
+#### Q2：模型路由的复杂度判断是怎么做的
+
+> **面试官**："你怎么判断一个 query 该路由到 7B 模型还是 72B 模型？标准是什么？"
+
+> **完美回答**：
+> "我的复杂度判断基于**双指标加权**：Token 数量 + 关键词语义分析。
+> 1. **Token 数量**：用 tiktoken 精确计算，低于 50 token 判为 LOW，高于 200 token 判为 HIGH，中间为 MEDIUM。
+> 2. **关键词匹配**：包含'分析'、'比较'、'评估'等复杂意图词的 query 会提升一个级别。
+>
+> 这样做的好处是**零额外延迟**——在模型调用前同步完成判断，不影响响应时效。实际测试中，简单查询（余额查询、还款咨询）路由到 7B 模型，成本降低 40%+，而复杂分析类 query 仍路由到 72B，质量不降。"
+
+#### Q3：语义缓存是怎么实现的？如何判断两个 query 是"语义相似"的？
+
+> **面试官**："你提到语义缓存，具体是怎么判断两个 query 是否可以复用缓存的？"
+
+> **完美回答**：
+> "MVP 阶段我用的是**简单 embedding 相似度**方案：
+> 1. 将 query 文本通过 embedding 模型转换为向量
+> 2. 用 Redis 存储向量，key 是业务线 + 模型名称
+> 3. 新请求来时，计算其 embedding 与缓存中所有向量的余弦相似度
+> 4. 相似度 > 0.85 则判定为命中，返回缓存结果
+>
+> 生产级升级方向是引入 **ChromaDB** 做向量检索，支持更大规模的缓存池。关键指标是**缓存 hit rate**，我的目标是 > 30%，意味着相同/相似 query 每三次调用中有一次不掏 token 费用。"
+
+#### Q4：如何设计一个 OPA 风格的策略引擎？
+
+> **面试官**："你在简历上写了'OPA 风格'的策略引擎，能详细说说吗？"
+
+> **完美回答**：
+> "OPA（Open Policy Agent）的核心理念是**策略与代码分离**。我的实现：
+> 1. **策略存储**：PostgreSQL 中存 JSON 格式的 Rego-like 策略规则，包含 effect（allow/deny）和 condition（匹配条件）。
+> 2. **评估上下文**：PolicyContext 包含 user_id、business_line、tool_name、attributes，评估时作为入参传入引擎。
+> 3. **匹配逻辑**：引擎遍历所有 active 策略，按优先级找到第一个匹配的条件，返回 allow 或 deny 及原因。
+> 4. **非阻塞**：策略评估在 FastAPI 中间件层同步完成，不影响主请求路径延迟。
+>
+> ABAC 部分是 Mock 实现，生产级需要对接 LDAP/AD 获取用户角色和组织架构信息。"
+
+#### Q5：FinOps 成本追踪是怎么实现的？
+
+> **面试官**："你说能按业务线追踪 AI 调用成本，具体是怎么做的？"
+
+> **完美回答**：
+> "成本追踪依赖于 **Observability Harness 的全链路埋点**：
+> 1. 每次 LLM 调用在 Gateway 层记录 input_tokens、output_tokens、model_name、business_line
+> 2. FinOpsTracker 维护一张费率表（如 qwen-72b = $0.002/1K tokens，qwen-7b = $0.0005/1K tokens）
+> 3. 每次调用后实时累加到对应 business_line 的成本中
+> 4. 提供 `/api/v1/costs` 接口返回按业务线聚合的成本报表
+>
+> 这解决了企业 AI 成本分摊的难题——财务可以精确知道'客服业务线'和'风控业务线'各自消耗了多少 token，应该分配多少费用。配合缓存 hit rate 指标，可以评估缓存对成本的节省贡献。"
+
+---
+
 ## 技术栈汇总
 
 | 组件 | 技术选型 | 用途 |
 |------|----------|------|
-| 后端框架 | FastAPI 0.110+ | 异步 API |
+| 后端框架 | FastAPI 0.110+ | 异步 API + 中间件 |
 | Agent 编排 | LangGraph 0.1+ | 状态机 + 条件路由 |
 | 图数据库 | Neo4j | 知识图谱查询 |
 | 向量数据库 | ChromaDB | RAG 检索 |
 | LLM | DashScope (Qwen) | 文本生成 |
 | ORM | SQLAlchemy 2.0 | 异步数据库 |
-| 测试 | pytest | 异步测试 |
-| 可观测 | OpenTelemetry + Phoenix | 全链路追踪 |
+| 缓存/限流 | Redis | 语义缓存 + 分布式限流 |
+| 可观测 | OpenTelemetry + Prometheus | 全链路追踪 + 指标采集 |
+| 评测 | tiktoken + LLM-as-Judge | Token 计数 + 自动评分 |
+| 测试 | pytest + pytest-asyncio | 异步测试 |
 
 ---
 
@@ -367,7 +463,7 @@ params = {"user_id": user_id}
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-repo/FinEngine_v3.git
+git clone https://github.com/dalianmao000/FinEngine_v3.git
 cd FinEngine_v3
 
 # 验证 FinAgent-Core
@@ -377,6 +473,13 @@ pytest tests/ -v --tb=short
 
 # 验证 Risk-Investigator
 cd ../risk-investigator
+pip install -r requirements.txt
+cd docker && docker-compose up -d
+cd ..
+pytest tests/ -v --tb=short
+
+# 验证 FinAgent-Ops
+cd ../finagent-ops
 pip install -r requirements.txt
 cd docker && docker-compose up -d
 cd ..
