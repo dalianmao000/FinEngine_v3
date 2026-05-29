@@ -2,17 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- test push -->
+
 ## Project Overview
 
 FinEngine_v3 is a monorepo containing **three independent but architecturally related Python projects** that share design patterns and tech stack. All three coexist on the `main` branch — **do not create separate git worktrees for these projects**. Each project is a complete, standalone FastAPI application.
 
-```
-finagent-core/         # Position 1: 通用智能体核心引擎 (General-purpose Agent platform)
-risk-investigator/     # Position 3: 风控调查工作流 (Risk investigation pipeline)
-finagent-ops/          # Position 2: AI 驾驭工程平台 (LLMOps / AI infrastructure control)
-```
 
-The three positions form a collaboration system: FinAgent-Core is the "前线作战部队" (front-line combat force), FinAgent-Ops is the "后勤兵工厂与高速公路" (logistics and highway infrastructure), and Risk-Investigator is the "专项调查武器" (specialized investigation weapon). See `README.md` for full architecture details.
+
+The three positions form a collaboration system: FinAgent-Core is the 前线作战部队 (front-line combat force), FinAgent-Ops is the 后勤兵工厂与高速公路 (logistics and highway infrastructure), and Risk-Investigator is the 专项调查武器 (specialized investigation weapon). See `README.md` for full architecture details.
 
 ---
 
@@ -69,10 +67,10 @@ pytest tests/test_workflow.py::test_name -v
 1. **Tool registration**: `@register_tool` decorator pattern. Tools are discovered via decorator, not hardcoded — new tools require zero core code changes.
 2. **TypedDict state**: LangGraph-style `TypedDict` state classes for type-safe, debuggable state management.
 3. **PII redaction**: All external data (user input, transaction notes) must be treated as untrusted — always apply PII redaction before logging or passing to LLM.
-4. **Parameterized queries**: Cypher and SQL always use parameter binding (`$var`) — never string concatenation.
+4. **Parameterized queries**: Cypher and SQL always use parameter binding (``) — never string concatenation.
 5. **Audit logging**: Every operation records `trace_id`, timestamp, and structured metadata. Never use `print()` for business logic.
 6. **Async SQLAlchemy 2.0**: All database operations use async sessions with `AsyncSession`.
-7. **Conditional routing**: LangGraph conditional edges route based on state fields (e.g., `risk_level == "HIGH"` → human approval node).
+7. **Conditional routing**: LangGraph conditional edges route based on state fields (e.g., `risk_level == HIGH` → human approval node).
 
 ### Project-specific patterns:
 
@@ -86,7 +84,7 @@ pytest tests/test_workflow.py::test_name -v
 
 - **All three projects live on `main` branch** — do not create worktrees to isolate them.
 - Branch protection is enabled: direct pushes to `main` are blocked. Use a PR branch (e.g., `docs/update-readme`) and merge via GitHub UI.
-- Owner can self-approve PRs (disable "include administrators" in branch protection rules if needed).
+- Owner can self-approve PRs (disable include administrators in branch protection rules if needed).
 
 ---
 
