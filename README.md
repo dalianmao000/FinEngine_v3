@@ -190,26 +190,28 @@ params = {"user_id": user_id}
 
 ### FinAgent-Core 核心模块对比
 
-| 核心维度 | MVP 实现程度 | 生产级要求 | 差异理由 |
-|:---|:---|:---|:---|
-| **大模型推理** | 🟡 中等<br>调用公有云 API，本地 Ollama 跑 7B/14B | 🟢 极高<br>私有化部署垂域大模型，vLLM/TensorRT-LLM 加速，多活容灾 | 金融数据不允许出域<br>**难点**：高并发显存优化、异构算力调度 |
-| **向量数据库** | 🟡 中等<br>ChromaDB 本地模式，几十篇文档 | 🟢 极高<br>Milvus 分布式集群，PB 级向量检索，多租户隔离 | 向量检索性能随数据量指数衰减<br>**难点**：召回率与延迟平衡、分布式索引 |
-| **Agent 编排** | 🟡 中等<br>原生 LangGraph，本地内存状态 | 🟢 极高<br>自研框架，状态持久化，断点续传，千级并发 | 开源框架达不到金融级 SLA<br>**难点**：死锁预防、长耗时任务异步调度 |
-| **多场景编排** | 🟡 中等<br>YAML 配置切换场景 | 🟢 极高<br>场景沙箱隔离，资源配额独立，算力灵活调度 | 多场景共用底座时资源竞争<br>**难点**：隔离与复用平衡 |
-| **RAG 检索** | 🟡 中等<br>简单向量检索 + BM25，无重排序 | 🟢 极高<br>混合检索 + Cross-Encoder 重排序 + 时效性管理 | 召回率与准确率难以平衡<br>**难点**：知识时效性、溯源能力 |
-| **安全与权限** | 🔴 较低<br>简单 PII 过滤，无细粒度权限 | 🟢 极高<br>NLP 脱敏网关，RBAC+ABAC，国密算法 | 金融监管红线<br>**难点**：动态脱敏性能、复杂权限策略 |
-| **可观测性** | 🟡 中等<br>本地 Phoenix + 控制台日志 | 🟢 极高<br>全链路 Trace，Kafka→ES，保留 5 年，对接监管 | 审计是金融命脉<br>**难点**：海量 Trace 存储与快速检索 |
-| **高可用部署** | 🟡 中等<br>Docker Compose 单机 | 🟢 极高<br>K8s 多活，异地灾备，自动故障恢复 | 单机无法满足金融 99.99% SLA<br>**难点**：流量切换、RTO/RPO 保障 |
+| 核心维度 | MVP 实现程度 | 生产级要求 | 差异理由 | 实现状态 |
+|:---|:---|:---|:---|:---|
+| **大模型推理** | 🟡 中等<br>调用公有云 API，本地 Ollama 跑 7B/14B | 🟢 极高<br>私有化部署垂域大模型，vLLM/TensorRT-LLM 加速，多活容灾 | 金融数据不允许出域<br>**难点**：高并发显存优化、异构算力调度 | ✅ DashScope 接入，跑通 |
+| **向量数据库** | 🟡 中等<br>ChromaDB 本地模式，几十篇文档 | 🟢 极高<br>Milvus 分布式集群，PB 级向量检索，多租户隔离 | 向量检索性能随数据量指数衰减<br>**难点**：召回率与延迟平衡、分布式索引 | ✅ ChromaDB 集成，lazy init 防崩溃 |
+| **Agent 编排** | 🟡 中等<br>原生 LangGraph，本地内存状态 | 🟢 极高<br>自研框架，状态持久化，断点续传，千级并发 | 开源框架达不到金融级 SLA<br>**难点**：死锁预防、长耗时任务异步调度 | ✅ LangGraph 状态机，TypedDict 类型安全 |
+| **多场景编排** | 🟡 中等<br>YAML 配置切换场景 | 🟢 极高<br>场景沙箱隔离，资源配额独立，算力灵活调度 | 多场景共用底座时资源竞争<br>**难点**：隔离与复用平衡 | ✅ ScenarioRouter 场景路由，3 场景可切 |
+| **RAG 检索** | 🟡 中等<br>简单向量检索 + BM25，无重排序 | 🟢 极高<br>混合检索 + Cross-Encoder 重排序 + 时效性管理 | 召回率与准确率难以平衡<br>**难点**：知识时效性、溯源能力 | ✅ EmbeddingClient + SimpleRetriever 混合检索 |
+| **安全与权限** | 🔴 较低<br>简单 PII 过滤，无细粒度权限 | 🟢 极高<br>NLP 脱敏网关，RBAC+ABAC，国密算法 | 金融监管红线<br>**难点**：动态脱敏性能、复杂权限策略 | ✅ PII 过滤 + pre/post safety check 分层 |
+| **可观测性** | 🟡 中等<br>本地 Phoenix + 控制台日志 | 🟢 极高<br>全链路 Trace，Kafka→ES，保留 5 年，对接监管 | 审计是金融命脉<br>**难点**：海量 Trace 存储与快速检索 | ⚠️ TraceLogger 链路追踪，本地文件日志 |
+| **高可用部署** | 🟡 中等<br>Docker Compose 单机 | 🟢 极高<br>K8s 多活，异地灾备，自动故障恢复 | 单机无法满足金融 99.99% SLA<br>**难点**：流量切换、RTO/RPO 保障 | ⚠️ Docker compose 单机，无 K8s |
+| **测试** | 🔴 无 | 🟢 全覆盖 | 测试是质量保障<br>**难点**：异步测试、mock 策略 | ⚠️ tests/ 空目录，无测试 |
 
 ### FinAgent-Ops 核心模块对比
 
-| 核心维度 | MVP 实现程度 | 生产级要求 | 差异理由 |
-|:---|:---|:---|:---|
-| **Serving（路由/缓存/限流）** | 🟡 中等<br>token 数量简单分级，Redis 简单 KV 缓存，无向量检索 | 🟢 极高<br>混合意图识别 + 向量相似度匹配，ChromaDB 语义缓存，Redis 分布式限流 | 缓存命中率决定成本优化空间<br>**难点**：语义相似度阈值调优、缓存更新策略 |
-| **Security（策略引擎）** | 🟡 中等<br>JSON 规则简单匹配，ABAC Mock 实现 | 🟢 极高<br>OPA Rego 完整语法，LDAP/AD 实时拉取角色，策略热更新 | 企业安全合规是底线<br>**难点**：策略版本管理、多租户隔离、评估性能 |
-| **Eval（LLM-as-a-Judge）** | 🟡 中等<br>简单关键词打分，无真实 LLM 调用 | 🟢 极高<br>真实 Secondary LLM 评估，多维度 Cross-Encoder 重排序，Golden Dataset 专家标注 | 评估质量决定 Prompt 迭代方向<br>**难点**：Judge Model 选择、评估一致性、CI/CD 无缝集成 |
-| **Observability（FinOps）** | 🟡 中等<br>内存计数器，PostgreSQL 日志，无真实 OpenTelemetry 上报 | 🟢 极高<br>Kafka → ClickHouse 全量 Trace，Prometheus + Grafana Dashboard，5 年保留 | 金融审计是监管要求<br>**难点**：海量数据低成本存储、查询性能、与监管报告对接 |
-| **Execution（工具沙箱）** | 🔴 较低<br>Python subprocess 简单超时，无真实容器隔离 | 🟢 极高<br>gVisor/Kata Containers 进程级隔离，网络/文件系统权限最小化 | 恶意工具注入是生产级威胁<br>**难点**：冷启动延迟、资源配额动态调整 |
+| 核心维度 | MVP 实现程度 | 生产级要求 | 差异理由 | 实现状态 |
+|:---|:---|:---|:---|:---|
+| **Serving（路由/缓存/限流）** | 🟡 中等<br>token 数量简单分级，Redis 简单 KV 缓存，无向量检索 | 🟢 极高<br>混合意图识别 + 向量相似度匹配，ChromaDB 语义缓存，Redis 分布式限流 | 缓存命中率决定成本优化空间<br>**难点**：语义相似度阈值调优、缓存更新策略 | ✅ TokenCounter + Router 复杂度路由，RateLimiter 实现 |
+| **Security（策略引擎）** | 🟡 中等<br>JSON 规则简单匹配，ABAC Mock 实现 | 🟢 极高<br>OPA Rego 完整语法，LDAP/AD 实时拉取角色，策略热更新 | 企业安全合规是底线<br>**难点**：策略版本管理、多租户隔离、评估性能 | ✅ PolicyEngine 条件匹配，Guardrail PII 检测 |
+| **Eval（LLM-as-a-Judge）** | 🟡 中等<br>简单关键词打分，无真实 LLM 调用 | 🟢 极高<br>真实 Secondary LLM 评估，多维度 Cross-Encoder 重排序，Golden Dataset 专家标注 | 评估质量决定 Prompt 迭代方向<br>**难点**：Judge Model 选择、评估一致性、CI/CD 无缝集成 | ✅ Judge评分 + Dataset 加载，真实 LLM 调用 |
+| **Observability（FinOps）** | 🟡 中等<br>内存计数器，PostgreSQL 日志，无真实 OpenTelemetry 上报 | 🟢 极高<br>Kafka → ClickHouse 全量 Trace，Prometheus + Grafana Dashboard，5 年保留 | 金融审计是监管要求<br>**难点**：海量数据低成本存储、查询性能、与监管报告对接 | ✅ TraceCollector + MetricsCollector + FinOpsTracker |
+| **Execution（工具沙箱）** | 🔴 较低<br>Python subprocess 简单超时，无真实容器隔离 | 🟢 极高<br>gVisor/Kata Containers 进程级隔离，网络/文件系统权限最小化 | 恶意工具注入是生产级威胁<br>**难点**：冷启动延迟、资源配额动态调整 | ✅ ToolRegistry + RBAC + Sandbox 超时控制 |
+| **测试** | 🔴 无 | 🟢 全覆盖 | 测试是质量保障<br>**难点**：异步测试、mock 策略 | ✅ 22 tests，all passing |
 
 ### AI Harness 工程深度对比表
 
@@ -223,14 +225,15 @@ params = {"user_id": user_id}
 
 ### Risk-Investigator 核心模块对比
 
-| 核心维度 | MVP 项目实现程度 | 金融生产级要求 | 差异理由与生产级难点 |
-|:---|:---|:---|:---|
-| **大模型推理与算力** | 🟡 中等<br>调用公有云 API 或本地 Ollama 跑 Qwen-7B/14B，单节点运行 | 🟢 极高<br>私有化部署金融垂域大模型，vLLM/TensorRT-LLM 推理加速，K8s GPU 集群多活容灾 | 金融核心数据**绝对不允许出域**调用公有云 API<br>**难点**：高并发显存优化、异构算力调度、P99 延迟保障 |
-| **数据源与 GraphRAG** | 🟡 中等<br>本地 Docker 跑 Neo4j，几十条伪造节点和边，向量库存几十篇 PDF | 🟢 极高<br>分布式图数据库集群，对接实时交易流水、设备指纹库、公安部黑名单，PB 级数据 | 个人无法获取真实金融数据<br>**难点**：多跳查询指数级性能衰减，实时流数据秒级入图 |
-| **Agent 编排与状态机** | 🟡 中等<br>原生 LangGraph，状态存本地内存，支持简单线性/条件分支工作流 | 🟢 极高<br>自研框架，状态持久化到 Redis/DB，支持宕机断点续传、复杂事务补偿、千级并发 | 开源框架在极高并发和复杂事务处理上达不到金融级 SLA<br>**难点**：死锁预防、长耗时任务异步调度与资源隔离 |
-| **安全、合规与权限** | 🔴 较低<br>简单正则替换脱敏，所有工具对 Agent 开放，无数据行级权限控制 | 🟢 极高<br>NLP 脱敏网关，RBAC+ABAC 数据权限，防 Prompt 注入专用安全模型，国密算法 | 金融监管红线<br>**难点**：动态脱敏性能损耗、复杂 ABAC 权限实时计算、防越狱攻击红蓝对抗 |
-| **审计与可观测性** | 🟡 中等<br>Arize Phoenix 本地看 Trace，日志在控制台或本地文件，无长期存储 | 🟢 极高<br>全链路 Trace 接入 SkyWalking，日志加密写入 Kafka→ES，保留 5 年以上，对接监管审计报告 | 审计是金融风控命脉<br>**难点**：海量 Trace 低成本存储与快速检索、幻觉自动化监控与拦截 |
-| **业务集成与工具调用** | 🟡 中等<br>FastAPI 编写 4 个返回固定 JSON 的假接口，同步调用，无熔断限流 | 🟢 极高<br>对接真实内部微服务（统一 API 网关），具备熔断、降级、限流，支持异步回调 | 个人无法连接真实银行内部系统<br>**难点**：老旧系统适配、跨部门 API 权限审批与网络打通 |
+| 核心维度 | MVP 项目实现程度 | 金融生产级要求 | 差异理由与生产级难点 | 实现状态 |
+|:---|:---|:---|:---|:---|
+| **大模型推理与算力** | 🟡 中等<br>调用公有云 API 或本地 Ollama 跑 Qwen-7B/14B，单节点运行 | 🟢 极高<br>私有化部署金融垂域大模型，vLLM/TensorRT-LLM 推理加速，K8s GPU 集群多活容灾 | 金融核心数据**绝对不允许出域**调用公有云 API<br>**难点**：高并发显存优化、异构算力调度、P99 延迟保障 | ✅ DashScope 集成，Mock 工具返回结构化数据 |
+| **数据源与 GraphRAG** | 🟡 中等<br>本地 Docker 跑 Neo4j，几十条伪造节点和边，向量库存几十篇 PDF | 🟢 极高<br>分布式图数据库集群，对接实时交易流水、设备指纹库、公安部黑名单，PB 级数据 | 个人无法获取真实金融数据<br>**难点**：多跳查询指数级性能衰减，实时流数据秒级入图 | ✅ CypherGenerator 生成参数化 Cypher，5 工具注册 |
+| **Agent 编排与状态机** | 🟡 中等<br>原生 LangGraph，状态存本地内存，支持简单线性/条件分支工作流 | 🟢 极高<br>自研框架，状态持久化到 Redis/DB，支持宕机断点续传、复杂事务补偿、千级并发 | 开源框架在极高并发和复杂事务处理上达不到金融级 SLA<br>**难点**：死锁预防、长耗时任务异步调度与资源隔离 | ✅ 四阶段 LangGraph 工作流，条件路由 HIGH → 人工审批 |
+| **安全、合规与权限** | 🔴 较低<br>简单正则替换脱敏，所有工具对 Agent 开放，无数据行级权限控制 | 🟢 极高<br>NLP 脱敏网关，RBAC+ABAC 数据权限，防 Prompt 注入专用安全模型，国密算法 | 金融监管红线<br>**难点**：动态脱敏性能损耗、复杂 ABAC 权限实时计算、防越狱攻击红蓝对抗 | ✅ PIITools 正则脱敏 + HumanInLoop 审批门控 |
+| **审计与可观测性** | 🟡 中等<br>Arize Phoenix 本地看 Trace，日志在控制台或本地文件，无长期存储 | 🟢 极高<br>全链路 Trace 接入 SkyWalking，日志加密写入 Kafka→ES，保留 5 年以上，对接监管审计报告 | 审计是金融风控命脉<br>**难点**：海量 Trace 低成本存储与快速检索、幻觉自动化监控与拦截 | ✅ AuditLogger trace_id + StructuredLoggable 接口 |
+| **业务集成与工具调用** | 🟡 中等<br>FastAPI 编写 4 个返回固定 JSON 的假接口，同步调用，无熔断限流 | 🟢 极高<br>对接真实内部微服务（统一 API 网关），具备熔断、降级、限流，支持异步回调 | 个人无法连接真实银行内部系统<br>**难点**：老旧系统适配、跨部门 API 权限审批与网络打通 | ✅ 5 工具 Mock 实现，registry 装饰器注册，asyncio.gather 并行 |
+| **测试** | 🔴 无 | 🟢 全覆盖 | 测试是质量保障<br>**难点**：异步测试、mock 策略 | ✅ 95 tests，all passing |
 
 ---
 
