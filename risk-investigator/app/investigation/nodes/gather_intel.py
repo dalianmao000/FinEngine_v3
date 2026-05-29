@@ -19,25 +19,28 @@ async def gather_intel_node(state: Dict[str, Any]) -> Dict[str, Any]:
     target_user_id = state.get("target_user_id", "")
     trigger_event = state.get("trigger_event", "")
 
-    async with asyncio.TaskGroup() as tg:
-        task_transactions = tg.create_task(
-            tool_registry.execute("get_transaction_history", user_id=target_user_id)
-        )
-        task_device = tg.create_task(
-            tool_registry.execute("get_device_fingerprint", user_id=target_user_id)
-        )
-        task_ip = tg.create_task(
-            tool_registry.execute("get_ip_profile", user_id=target_user_id)
-        )
-        task_blacklist = tg.create_task(
-            tool_registry.execute("check_blacklist", user_id=target_user_id)
-        )
+    task_transactions = asyncio.create_task(
+        tool_registry.execute("get_transaction_history", user_id=target_user_id)
+    )
+    task_device = asyncio.create_task(
+        tool_registry.execute("get_device_fingerprint", user_id=target_user_id)
+    )
+    task_ip = asyncio.create_task(
+        tool_registry.execute("get_ip_profile", user_id=target_user_id)
+    )
+    task_blacklist = asyncio.create_task(
+        tool_registry.execute("check_blacklist", user_id=target_user_id)
+    )
+
+    results = await asyncio.gather(
+        task_transactions, task_device, task_ip, task_blacklist
+    )
 
     collected_evidence = {
-        "transaction_history": task_transactions.result(),
-        "device_info": task_device.result(),
-        "ip_profile": task_ip.result(),
-        "blacklist_status": task_blacklist.result(),
+        "transaction_history": results[0],
+        "device_info": results[1],
+        "ip_profile": results[2],
+        "blacklist_status": results[3],
         "trigger_event": trigger_event,
         "collection_timestamp": datetime.now().isoformat(),
     }
