@@ -65,6 +65,67 @@ pytest tests/ -v
 | GET | `/api/v1/metrics` | Prometheus 指标 |
 | GET | `/api/v1/health` | 健康检查 |
 
-## 许可证
+## 项目结构
 
-MIT
+```
+finagent-ops/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI 入口
+│   ├── config.py           # Pydantic Settings 配置
+│   ├── database.py         # 异步 SQLAlchemy 引擎
+│   ├── models.py           # SQLAlchemy 数据模型
+│   ├── api/                 # API 路由
+│   │   ├── __init__.py
+│   │   ├── gateway.py      # Serving Harness 网关
+│   │   ├── eval.py         # Eval Harness 端点
+│   │   ├── admin.py        # Admin 端点（策略管理）
+│   │   └── routes.py       # 路由聚合
+│   ├── harness/            # 五大 Harness 子系统
+│   │   ├── __init__.py
+│   │   ├── serving/        # Serving Harness（算力驾驭）
+│   │   │   ├── __init__.py
+│   │   │   ├── router.py       # 复杂度模型路由
+│   │   │   ├── cache.py        # 语义缓存（Redis）
+│   │   │   └── rate_limiter.py # 限流器（Token Bucket）
+│   │   ├── security/       # Security Harness（安全驾驭）
+│   │   │   ├── __init__.py
+│   │   │   ├── guardrail.py    # PII 检测 + 内容过滤
+│   │   │   └── policy_engine.py # OPA 风格策略引擎
+│   │   ├── execution/      # Execution Harness（执行驾驭）
+│   │   │   ├── __init__.py
+│   │   │   ├── tool_registry.py  # 工具注册 + RBAC
+│   │   │   └── sandbox.py      # 沙箱隔离执行
+│   │   ├── eval/           # Eval Harness（评测驾驭）
+│   │   │   ├── __init__.py
+│   │   │   ├── judge.py        # LLM-as-a-Judge
+│   │   │   ├── evaluator.py    # 批量评估器
+│   │   │   └── dataset.py      # 测试数据集
+│   │   └── observability/  # Observability Harness（可观测驾驭）
+│   │       ├── __init__.py
+│   │       ├── trace.py       # OpenTelemetry Trace 采集
+│   │       ├── metrics.py     # Prometheus 指标
+│   │       └── finops.py      # FinOps 成本归因
+│   └── core/                # 核心工具
+│       ├── __init__.py
+│       ├── token_counter.py   # tiktoken Token 计数
+│       └── exceptions.py      # 自定义异常
+├── tests/                  # 测试
+│   ├── __init__.py
+│   ├── conftest.py         # pytest 异步配置
+│   ├── test_serving.py
+│   ├── test_security.py
+│   ├── test_execution.py
+│   ├── test_eval.py
+│   ├── test_observability.py
+│   ├── test_config.py
+│   ├── test_models.py
+│   ├── test_integration.py
+│   └── test_api.py
+├── docker/
+│   ├── Dockerfile         # 容器镜像
+│   └── docker-compose.yml  # PostgreSQL + Redis
+├── docs/                   # 文档
+├── requirements.txt        # 依赖
+└── README_zh.md            # 本文件
+```
