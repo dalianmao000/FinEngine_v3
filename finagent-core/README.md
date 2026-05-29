@@ -89,31 +89,73 @@ finagent-core/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPI 入口
-│   ├── config.py           # 配置
-│   ├── database.py         # SQLAlchemy 配置
+│   ├── config.py           # Pydantic Settings 配置
+│   ├── database.py         # 异步 SQLAlchemy 引擎
 │   ├── agent/
 │   │   ├── __init__.py
-│   │   ├── router.py       # Agent 编排
-│   │   ├── security.py     # PII 检测、内容过滤
-│   │   └── audit.py        # 审计日志
-│   ├── rag/
+│   │   ├── orchestrator.py  # Agent 编排器（场景路由 + 工具分发）
+│   │   ├── routing.py       # 场景路由器
+│   │   ├── states.py       # TypedDict 状态定义
+│   │   ├── safety/         # 安全层
+│   │   │   ├── __init__.py
+│   │   │   ├── pre_check.py      # 输入安全检查
+│   │   │   ├── post_check.py     # 输出安全检查
+│   │   │   ├── jailbreak_detector.py  # 越狱检测
+│   │   │   ├── policy_manager.py    # 策略管理
+│   │   │   └── confidence_monitor.py # 置信度监控
+│   │   ├── memory/          # 记忆管理
+│   │   │   ├── __init__.py
+│   │   │   ├── short_term.py     # 短期记忆（会话级）
+│   │   │   ├── long_term.py      # 长期记忆（持久化）
+│   │   │   ├── context_manager.py # 上下文管理器
+│   │   │   └── entity_tracker.py  # 实体追踪器
+│   │   └── audit/          # 审计
+│   │       ├── __init__.py
+│   │       ├── logger.py         # 审计日志
+│   │       ├── tracer.py        # 链路追踪
+│   │       ├── anomaly_detector.py  # 异常检测
+│   │       └── reporter.py      # 报告生成
+│   ├── rag/                # RAG 引擎
 │   │   ├── __init__.py
-│   │   ├── engine.py       # RAG 引擎
-│   │   └── embedder.py     # 文本嵌入
-│   ├── tools/
+│   │   ├── knowledge_base.py   # 知识库管理
+│   │   ├── embedding.py        # 文本嵌入
+│   │   └── retriever.py       # 检索器（混合检索）
+│   ├── tools/               # 工具注册中心
 │   │   ├── __init__.py
-│   │   └── registry.py     # 工具注册
-│   ├── llm/
+│   │   ├── registry.py        # 工具注册表
+│   │   ├── schema_validator.py # 参数校验
+│   │   └── built_in/          # 内置工具
+│   │       ├── __init__.py
+│   │       ├── card_management.py  # 卡管理工具
+│   │       ├── transaction_query.py # 交易查询工具
+│   │       └── knowledge_retriever.py # 知识检索工具
+│   ├── llm/                 # LLM 客户端
 │   │   ├── __init__.py
-│   │   └── dashscope.py    # DashScope LLM 客户端
-│   ├── scenarios/
-│   │   └── *.yaml          # 场景配置
-│   └── api/
-│       └── routes.py       # API 路由
+│   │   └── client.py        # DashScope 客户端
+│   ├── scenarios/           # 场景配置
+│   │   ├── customer_service.yaml  # 客服场景
+│   │   ├── operations.yaml        # 运营场景
+│   │   └── recommendation.yaml    # 推荐场景
+│   ├── api/                 # API 路由
+│   │   ├── __init__.py
+│   │   ├── routes.py        # 路由聚合
+│   │   └── schemas.py      # Pydantic 请求/响应模型
+│   └── utils/               # 工具函数
+│       ├── __init__.py
+│       ├── desensitizer.py  # 脱敏工具
+│       └── compliance.py   # 合规检查
 ├── docker/
-│   └── docker-compose.yml  # 服务
-├── docs/
-└── requirements.txt
+│   └── docker-compose.yml  # PostgreSQL + Redis 服务
+├── tests/                  # 测试
+│   ├── __init__.py
+│   ├── test_agent.py
+│   ├── test_rag.py
+│   ├── test_tools.py
+│   └── test_api.py
+├── data/                   # 数据目录
+├── docs/                   # 文档
+├── requirements.txt        # 依赖
+└── README.md               # 本文件
 ```
 
 ## 场景
